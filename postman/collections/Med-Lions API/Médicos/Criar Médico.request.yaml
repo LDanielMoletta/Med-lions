@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Criar Médico'
+method: POST
+url: '{{baseUrl}}/medicos'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nome": "Dr. João Souza",
+      "especialidade": "Neurologia"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 201 - Criado com sucesso", () => pm.response.to.have.status(201));
+      pm.test("Retorna o médico criado com ID", () => {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('id');
+          pm.expect(json.nome).to.eql('Dr. João Souza');
+          pm.expect(json.especialidade).to.eql('Neurologia');
+      });
+      pm.environment.set("medicoId", pm.response.json().id);

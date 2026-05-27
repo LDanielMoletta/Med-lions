@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Listar Consultas'
+method: GET
+url: '{{baseUrl}}/consultas'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Resposta é um array", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Cada consulta tem campos obrigatórios", () => {
+          pm.response.json().forEach(c => {
+              pm.expect(c).to.have.property('id');
+              pm.expect(c).to.have.property('data');
+              pm.expect(c).to.have.property('idMedico');
+              pm.expect(c).to.have.property('idPaciente');
+              pm.expect(c).to.have.property('descricao');
+          });
+      });

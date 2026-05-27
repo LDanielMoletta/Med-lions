@@ -1,37 +1,70 @@
-// src/server.js
 const express = require('express');
+const path = require('path');
 const apiRoutes = require('./routes/api');
+const conectarBanco = require('./config/db');
 
-// Importa os controllers para popular dados de exemplo na API
 const medicoCtrl = require('./controllers/medicoController');
 const pacienteCtrl = require('./controllers/pacienteController');
 const consultaCtrl = require('./controllers/consultaController');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware para permitir que o Express entenda requisições com dados em formato JSON
 app.use(express.json());
-
-// Função para pré-carregar dados e a API não iniciar vazia
-const carregarDadosIniciais = () => {
-    medicoCtrl.criarMedico("Dr. Carlos Silva", "Cardiologia");
-    medicoCtrl.criarMedico("Dra. Ana Costa", "Pediatria");
-    pacienteCtrl.criarPaciente("Marcos Oliveira", "1985-04-12");
-    consultaCtrl.criarConsulta("2026-06-10 14:00", 1, 1, "Rotina cardiovascular");
-};
-carregarDadosIniciais();
-
-// Vincula as rotas criadas ao prefixo /api
+app.use((req, res, next) => {
+    console.log(`REQ ${req.method} ${req.originalUrl}`);
+    next();
+});
+app.get('/api/test', (req, res) => res.json({ ok: true, route: '/api/test' }));
+app.use('/api', (req, res, next) => {
+    console.log(`API PREFIX ${req.method} ${req.originalUrl} -> ${req.path}`);
+    next();
+});
+app.use('/api', (req, res, next) => {
+    console.log('API SIMPLE MIDDLEWARE');
+    next();
+});
+console.log('apiRoutes object:', typeof apiRoutes, apiRoutes && apiRoutes.stack && apiRoutes.stack.length);
 app.use('/api', apiRoutes);
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Inicializa o servidor HTTP
-app.listen(PORT, () => {
-    console.log(`\n🚀 Servidor da API rodando com sucesso!`);
-    console.log(`📍 URL Base: http://localhost:${PORT}/api`);
-    console.log(`📂 Endpoints disponíveis:`);
-    console.log(`   - GET/POST  http://localhost:${PORT}/api/medicos`);
-    console.log(`   - GET/POST  http://localhost:${PORT}/api/pacientes`);
-    console.log(`   - GET/POST  http://localhost:${PORT}/api/consultas`);
-    console.log(`   - GET       http://localhost:${PORT}/api/relatorios/consultas-medico/1`);
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.use((req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ erro: 'Endpoint não encontrado.' });
+    }
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+const carregarDadosIniciais = async () => {
+    const medicosExistentes = await medicoCtrl.listarMedicos();
+    const pacientesExistentes = await pacienteCtrl.listarPacientes();
+    if (medicosExistentes.length > 0 && pacientesExistentes.length > 0) {
+        return;
+    }
+
+    const medico1 = await medicoCtrl.criarMedico('Dr. Carlos Silva', 'Cardiologia');
+    const medico2 = await medicoCtrl.criarMedico('Dra. Ana Costa', 'Pediatria');
+    const paciente1 = await pacienteCtrl.criarPaciente('Marcos Oliveira', '1985-04-12');
+
+    await consultaCtrl.criarConsulta('2026-06-10 14:00', medico1._id, paciente1._id, 'Rotina cardiovascular');
+};
+
+const startServer = async () => {
+    await conectarBanco();
+    await carregarDadosIniciais();
+
+    app.listen(PORT, () => {
+        console.log(`\n🚀 Servidor rodando com sucesso!`);
+        console.log(`📍 Acesse: http://localhost:${PORT}`);
+        console.log(`📂 API: http://localhost:${PORT}/api`);
+    });
+};
+
+startServer().catch(error => {
+    console.error('Erro ao iniciar servidor:', error);
+    process.exit(1);
 });

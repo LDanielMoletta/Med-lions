@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Med Lions - Sistema de Consultas Médicas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="brand">
+      <div class="logo-icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" class="logo-svg">
+          <circle cx="50" cy="50" r="48" fill="#fff" />
+          <path d="M34 35 C30 38, 28 44, 29 50 C30 56, 33 62, 39 64 C45 66, 55 65, 60 60 C65 55, 66 45, 61 40 C56 35, 44 33, 34 35 Z" fill="#d30d0d" />
+          <path d="M37 52 C42 50, 58 50, 63 52 C60 58, 55 62, 50 63 C45 62, 40 58, 37 52 Z" fill="#d30d0d" />
+          <path d="M45 30 L48 20 L52 20 L55 30 Z" fill="#d30d0d" />
+          <path d="M30 42 L25 35 L30 33 L34 39 Z" fill="#d30d0d" />
+          <path d="M70 42 L75 35 L70 33 L66 39 Z" fill="#d30d0d" />
+        </svg>
+      </div>
+      <div>
+        <h1>MED LIONS</h1>
+        <p>Sistema de Consultas Médicas</p>
+      </div>
+    </div>
+    <nav class="menu">
+      <button data-section="medicos" class="active">Médicos</button>
+      <button data-section="pacientes">Pacientes</button>
+      <button data-section="consultas">Consultas</button>
+      <button data-section="relatorios">Relatórios</button>
+    </nav>
+    <button id="login-button" class="btn-secondary login-button">Login</button>
+  </header>
+
+  <div id="login-panel" class="login-panel active">
+    <div class="login-card">
+      <h2>Entrar no Med Lions</h2>
+      <p>Use o mesmo usuário e senha para acessar o sistema.</p>
+      <form id="login-form">
+        <div class="field-group">
+          <label for="login-usuario">Usuário</label>
+          <input id="login-usuario" type="text" placeholder="admin" required />
+        </div>
+        <div class="field-group">
+          <label for="login-senha">Senha</label>
+          <input id="login-senha" type="password" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn-primary">Entrar</button>
+        <p id="login-message" class="login-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <main class="container hidden">
+    <div id="notification" class="notification hidden"></div>
+
+    <section id="medicos" class="panel active">
+      <div class="panel-header">
+        <h2>Médicos</h2>
+      </div>
+      <form id="medico-form" class="card form-card">
+        <h3>Adicionar médico</h3>
+        <div class="field-group">
+          <label for="medico-nome">Nome</label>
+          <input id="medico-nome" type="text" placeholder="Nome do médico" required />
+        </div>
+        <div class="field-group">
+          <label for="medico-especialidade">Especialidade</label>
+          <input id="medico-especialidade" type="text" placeholder="Ex: Cardiologia" required />
+        </div>
+        <button type="submit" class="btn-primary">Salvar médico</button>
+      </form>
+      <div class="card list-card">
+        <h3>Lista de Médicos</h3>
+        <div class="search-row">
+          <input id="medico-busca" type="text" placeholder="Buscar por nome ou especialidade" />
+          <button id="medico-buscar" class="btn-secondary">Buscar</button>
+        </div>
+        <div id="medico-list" class="table-responsive"></div>
+      </div>
+    </section>
+
+    <section id="pacientes" class="panel">
+      <div class="panel-header">
+        <h2>Pacientes</h2>
+      </div>
+      <form id="paciente-form" class="card form-card">
+        <h3>Adicionar paciente</h3>
+        <div class="field-group">
+          <label for="paciente-nome">Nome</label>
+          <input id="paciente-nome" type="text" placeholder="Nome do paciente" required />
+        </div>
+        <div class="field-group">
+          <label for="paciente-data">Data de nascimento</label>
+          <input id="paciente-data" type="date" required />
+        </div>
+        <button type="submit" class="btn-primary">Salvar paciente</button>
+      </form>
+      <div class="card list-card">
+        <h3>Lista de Pacientes</h3>
+        <div class="search-row">
+          <input id="paciente-busca" type="text" placeholder="Buscar por nome" />
+          <button id="paciente-buscar" class="btn-secondary">Buscar</button>
+        </div>
+        <div id="paciente-list" class="table-responsive"></div>
+      </div>
+    </section>
+
+    <section id="consultas" class="panel">
+      <div class="panel-header">
+        <h2>Consultas</h2>
+      </div>
+      <form id="consulta-form" class="card form-card">
+        <h3>Agendar consulta</h3>
+        <div class="field-group">
+          <label for="consulta-datahora">Data e hora</label>
+          <input id="consulta-datahora" type="datetime-local" required />
+        </div>
+        <div class="field-group">
+          <label for="consulta-medico">Médico</label>
+          <select id="consulta-medico" required></select>
+        </div>
+        <div class="field-group">
+          <label for="consulta-paciente">Paciente</label>
+          <select id="consulta-paciente" required></select>
+        </div>
+        <div class="field-group">
+          <label for="consulta-motivo">Motivo</label>
+          <input id="consulta-motivo" type="text" placeholder="Motivo da consulta" />
+        </div>
+        <button type="submit" class="btn-primary">Agendar consulta</button>
+      </form>
+      <div class="card list-card">
+        <h3>Consultas agendadas</h3>
+        <div class="search-row">
+          <input id="consulta-busca" type="text" placeholder="Buscar por data ou motivo" />
+          <button id="consulta-buscar" class="btn-secondary">Buscar</button>
+        </div>
+        <div id="consulta-list" class="table-responsive"></div>
+      </div>
+    </section>
+
+    <section id="relatorios" class="panel">
+      <div class="panel-header">
+        <h2>Relatórios</h2>
+      </div>
+      <div class="card report-card">
+        <h3>Relatórios rápidos</h3>
+        <div class="report-grid">
+          <div class="field-group">
+            <label for="relatorio-medico-id">ID do médico</label>
+            <input id="relatorio-medico-id" type="text" placeholder="Ex: 6418e..." />
+            <button id="relatorio-consultas-medico" class="btn-secondary">Consultas por médico</button>
+          </div>
+          <div class="field-group">
+            <label for="relatorio-pacientes-medico">ID do médico</label>
+            <input id="relatorio-pacientes-medico" type="text" placeholder="Ex: 6418e..." />
+            <button id="relatorio-pacientes-por-medico" class="btn-secondary">Pacientes por médico</button>
+          </div>
+          <div class="field-group">
+            <label for="relatorio-medicos-paciente">ID do paciente</label>
+            <input id="relatorio-medicos-paciente" type="text" placeholder="Ex: 6418e..." />
+            <button id="relatorio-medicos-por-paciente" class="btn-secondary">Médicos por paciente</button>
+          </div>
+          <div class="field-group">
+            <label for="relatorio-mes">Ano e mês</label>
+            <input id="relatorio-mes" type="month" />
+            <button id="relatorio-consultas-mes" class="btn-secondary">Consultas por mês</button>
+          </div>
+        </div>
+      </div>
+      <div id="relatorio-list" class="card list-card"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

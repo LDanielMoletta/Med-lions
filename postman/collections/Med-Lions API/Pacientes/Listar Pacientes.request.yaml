@@ -1,0 +1,18 @@
+$kind: http-request
+name: 'Listar Pacientes'
+method: GET
+url: '{{baseUrl}}/pacientes'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Resposta é um array", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Cada paciente tem id, nome e dataNascimento", () => {
+          pm.response.json().forEach(p => {
+              pm.expect(p).to.have.property('id');
+              pm.expect(p).to.have.property('nome');
+              pm.expect(p).to.have.property('dataNascimento');
+          });
+      });

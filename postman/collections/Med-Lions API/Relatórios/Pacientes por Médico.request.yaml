@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Pacientes por Médico'
+method: GET
+url: '{{baseUrl}}/relatorios/pacientes-medico/1'
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Retorna array de pacientes", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Cada paciente tem id e nome", () => {
+          pm.response.json().forEach(p => {
+              pm.expect(p).to.have.property('id');
+              pm.expect(p).to.have.property('nome');
+          });
+      });

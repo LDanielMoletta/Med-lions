@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Buscar Paciente por Nome'
+method: GET
+url: '{{baseUrl}}/pacientes'
+order: 2000
+queryParams:
+  - key: nome
+    value: Marcos
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Retorna array", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Resultados contêm o nome buscado", () => {
+          pm.response.json().forEach(p => {
+              pm.expect(p.nome.toLowerCase()).to.include('marcos');
+          });
+      });

@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Atualizar Médico'
+method: PUT
+url: '{{baseUrl}}/medicos/1'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nome": "Dr. Carlos Silva Atualizado"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Nome foi atualizado", () => {
+          const json = pm.response.json();
+          pm.expect(json.nome).to.eql('Dr. Carlos Silva Atualizado');
+      });

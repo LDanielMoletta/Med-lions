@@ -1,0 +1,14 @@
+$kind: http-request
+name: 'Excluir Médico'
+method: DELETE
+url: '{{baseUrl}}/medicos/1'
+order: 6000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Mensagem de sucesso retornada", () => {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('mensagem');
+      });

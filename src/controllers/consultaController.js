@@ -1,16 +1,27 @@
-// src/controllers/consultaController.js
+const mongoose = require('mongoose');
+const Consulta = require('../models/Consulta');
+const Medico = require('../models/Medico');
+const Paciente = require('../models/Paciente');
 
-const { consultas, gerarConsultaId, medicos, pacientes } = require('../database/repository');
-
-// 1. CRIAÇÃO: Adiciona uma nova consulta com validações de regras de negócio
-const criarConsulta = (data, idMedico, idPaciente, descricao) => {
-    if (!data || !idMedico || !idPaciente || !descricao) {
-        throw new Error("Todos os campos (data, idMedico, idPaciente, descricao) são obrigatórios.");
+const criarConsulta = async (data, idMedico, idPaciente, motivo) => {
+    if (!data || !idMedico || !idPaciente) {
+        throw new Error('Data/hora, médico e paciente são obrigatórios.');
     }
 
-    // Validação extra: Garante que o médico e o paciente existem no sistema
-    const medicoExiste = medicos.some(m => m.id === idMedico);
-    const pacienteExiste = pacientes.some(p => p.id === idPaciente);
+    if (!mongoose.Types.ObjectId.isValid(idMedico)) {
+        throw new Error(`ID de médico inválido: ${idMedico}`);
+    }
+    if (!mongoose.Types.ObjectId.isValid(idPaciente)) {
+        throw new Error(`ID de paciente inválido: ${idPaciente}`);
+    }
+
+    const dataHora = new Date(data);
+    if (isNaN(dataHora)) {
+        throw new Error('Formato de data/hora inválido. Use AAAA-MM-DD HH:MM.');
+    }
+
+    const medicoExiste = await Medico.exists({ _id: idMedico });
+    const pacienteExiste = await Paciente.exists({ _id: idPaciente });
 
     if (!medicoExiste) {
         throw new Error(`Não é possível agendar: Médico com ID ${idMedico} não existe.`);
@@ -19,58 +30,64 @@ const criarConsulta = (data, idMedico, idPaciente, descricao) => {
         throw new Error(`Não é possível agendar: Paciente com ID ${idPaciente} não existe.`);
     }
 
-    // REGRA DE REQUISITO: Não permitir consulta para o mesmo médico na mesma data
-    // Nota: O formato da data deve ser padronizado (Ex: "2026-05-25" ou "2026-05-25 14:00")
-    const medicoOcupado = consultas.some(c => c.idMedico === idMedico && c.data === data);
-
+    const medicoOcupado = await Consulta.exists({ medico: idMedico, dataHora });
     if (medicoOcupado) {
         throw new Error(`Agenda indisponível: O médico já possui uma consulta marcada na data/horário: ${data}.`);
     }
 
-    const novaConsulta = {
-        id: gerarConsultaId(),
-        data,
-        idMedico,
-        idPaciente,
-        descricao
-    };
+    const consulta = new Consulta({
+        dataHora,
+        medico: idMedico,
+        paciente: idPaciente,
+        motivo: motivo?.trim() || 'Consulta de rotina'
+    });
 
-    consultas.push(novaConsulta);
-    return novaConsulta;
+    return consulta.save();
 };
 
-// 2. LEITURA: Listar todas as consultas cadastradas
-const listarConsultas = () => {
-    return consultas;
+const listarConsultas = async () => {
+    return Consulta.find().populate('medico paciente').sort({ dataHora: 1 }).lean();
 };
 
-// 4. EXCLUSÃO: Remover uma consulta do sistema pelo ID
-const excluirConsulta = (id) => {
-    const indice = consultas.findIndex(c => c.id === id);
-
-    if (indice === -1) {
+const excluirConsulta = async (id) => {
+    const consultaRemovida = await Consulta.findByIdAndDelete(id);
+    if (!consultaRemovida) {
         throw new Error(`Consulta com ID ${id} não foi encontrada.`);
     }
-
-    const [consultaRemovida] = consultas.splice(indice, 1);
     return consultaRemovida;
 };
 
-// 5. BUSCAS ESPECÍFICAS EXIGIDAS NO REQUISITO
-const buscarConsultaPorData = (data) => {
-    return consultas.filter(c => c.data.includes(data));
+const buscarConsultaPorData = async (data) => {
+    const dataHora = new Date(data);
+    if (isNaN(dataHora)) {
+        throw new Error('Formato de data inválido. Use AAAA-MM-DD ou AAAA-MM-DD HH:MM.');
+    }
+
+    const proximoDia = new Date(dataHora);
+    if (data.length === 10) {
+        proximoDia.setDate(proximoDia.getDate() + 1);
+    } else {
+        proximoDia.setSeconds(proximoDia.getSeconds() + 1);
+    }
+
+    return Consulta.find({
+        dataHora: {
+            $gte: dataHora,
+            $lt: proximoDia
+        }
+    }).populate('medico paciente').lean();
 };
 
-const buscarConsultaPorMedico = (idMedico) => {
-    return consultas.filter(c => c.idMedico === idMedico);
+const buscarConsultaPorMedico = async (idMedico) => {
+    return Consulta.find({ medico: idMedico }).populate('medico paciente').lean();
 };
 
-const buscarConsultaPorPaciente = (idPaciente) => {
-    return consultas.filter(c => c.idPaciente === idPaciente);
+const buscarConsultaPorPaciente = async (idPaciente) => {
+    return Consulta.find({ paciente: idPaciente }).populate('medico paciente').lean();
 };
 
-const buscarConsultaPorDescricao = (descricao) => {
-    return consultas.filter(c => c.descricao.toLowerCase().includes(descricao.toLowerCase()));
+const buscarConsultaPorDescricao = async (descricao) => {
+    return Consulta.find({ motivo: new RegExp(descricao, 'i') }).populate('medico paciente').lean();
 };
 
 module.exports = {

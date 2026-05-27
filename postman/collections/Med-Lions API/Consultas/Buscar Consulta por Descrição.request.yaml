@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Buscar Consulta por Descrição'
+method: GET
+url: '{{baseUrl}}/consultas'
+order: 3000
+queryParams:
+  - key: descricao
+    value: cardiovascular
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Retorna array", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Resultados contêm a descrição buscada", () => {
+          pm.response.json().forEach(c => {
+              pm.expect(c.descricao.toLowerCase()).to.include('cardiovascular');
+          });
+      });

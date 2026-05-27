@@ -1,43 +1,40 @@
-// src/reports/relatorioController.js
+const Consulta = require('../models/Consulta');
+const Medico = require('../models/Medico');
+const Paciente = require('../models/Paciente');
 
-const { consultas, medicos, pacientes } = require('../database/repository');
-
-// 6. RELATÓRIO: Listar todas as consultas realizadas por um médico específico
-const relatorioConsultasPorMedico = (idMedico) => {
-    return consultas.filter(c => c.idMedico === idMedico);
+const relatorioConsultasPorMedico = async (idMedico) => {
+    return Consulta.find({ medico: idMedico }).populate('paciente').lean();
 };
 
-// 6. RELATÓRIO: Listar todos os pacientes atendidos por um médico específico
-const relatorioPacientesPorMedico = (idMedico) => {
-    // Filtra as consultas do médico
-    const consultasDoMedico = consultas.filter(c => c.idMedico === idMedico);
-    
-    // Mapeia para pegar os IDs dos pacientes de forma única (sem duplicados)
-    const idsPacientes = [...new Set(consultasDoMedico.map(c => c.idPaciente))];
-    
-    // Retorna os objetos completos dos pacientes
-    return pacientes.filter(p => idsPacientes.includes(p.id));
+const relatorioPacientesPorMedico = async (idMedico) => {
+    const idsPacientes = await Consulta.find({ medico: idMedico }).distinct('paciente');
+    return Paciente.find({ _id: { $in: idsPacientes } }).lean();
 };
 
-// 6. RELATÓRIO: Listar todos os médicos que atenderam um paciente específico
-const relatorioMedicosPorPaciente = (idPaciente) => {
-    // Filtra as consultas do paciente
-    const consultasDoPaciente = consultas.filter(c => c.idPaciente === idPaciente);
-    
-    // Mapeia para pegar os IDs dos médicos de forma única (sem duplicados)
-    const idsMedicos = [...new Set(consultasDoPaciente.map(c => c.idMedico))];
-    
-    // Retorna os objetos completos dos médicos
-    return medicos.filter(m => idsMedicos.includes(m.id));
+const relatorioMedicosPorPaciente = async (idPaciente) => {
+    const idsMedicos = await Consulta.find({ paciente: idPaciente }).distinct('medico');
+    return Medico.find({ _id: { $in: idsMedicos } }).lean();
 };
 
-// 6. RELATÓRIO: Listar todas as consultas realizadas em um mês específico
-// Espera o formato "AAAA-MM" (Ex: "2026-05") ou apenas "-MM-" dependendo de como salvou a string
-const relatorioConsultasPorMes = (anoMes) => {
+const relatorioConsultasPorMes = async (anoMes) => {
     if (!anoMes) {
         throw new Error("É necessário informar o ano e mês no formato 'AAAA-MM'.");
     }
-    return consultas.filter(c => c.data.startsWith(anoMes));
+
+    const [ano, mes] = anoMes.split('-').map(Number);
+    if (!ano || !mes || mes < 1 || mes > 12) {
+        throw new Error("Formato inválido. Use 'AAAA-MM'.");
+    }
+
+    const inicio = new Date(ano, mes - 1, 1);
+    const fim = new Date(ano, mes, 1);
+
+    return Consulta.find({
+        dataHora: {
+            $gte: inicio,
+            $lt: fim
+        }
+    }).populate('medico paciente').lean();
 };
 
 module.exports = {

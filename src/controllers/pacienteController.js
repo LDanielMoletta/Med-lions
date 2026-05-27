@@ -1,66 +1,70 @@
-// src/controllers/pacienteController.js
+const Paciente = require('../models/Paciente');
 
-// Importa o banco de dados em memória e a função de ID do repositório
-const { pacientes, gerarPacienteId } = require('../database/repository');
-
-// 1. CRIAÇÃO: Adiciona um novo paciente com ID sequencial
-const criarPaciente = (nome, dataNascimento) => {
+const criarPaciente = async (nome, dataNascimento) => {
     if (!nome || !dataNascimento) {
-        throw new Error("Nome e data de nascimento são obrigatórios.");
+        throw new Error('Nome e data de nascimento são obrigatórios.');
     }
 
-    const novoPaciente = {
-        id: gerarPacienteId(),
-        nome,
-        dataNascimento // Espera uma string formatada (ex: "1990-05-15" ou "15/05/1990")
-    };
+    const data = new Date(dataNascimento);
+    if (isNaN(data)) {
+        throw new Error('Formato de data de nascimento inválido. Use AAAA-MM-DD.');
+    }
 
-    pacientes.push(novoPaciente);
-    return novoPaciente;
+    const paciente = new Paciente({ nome, dataNascimento: data });
+    return paciente.save();
 };
 
-// 2. LEITURA: Retorna todos os pacientes cadastrados
-const listarPacientes = () => {
-    return pacientes;
+const listarPacientes = async () => {
+    return Paciente.find().lean();
 };
 
-// 3. ATUALIZAÇÃO: Atualiza os dados de um paciente existente pelo ID
-const atualizarPaciente = (id, novosDados) => {
-    const paciente = pacientes.find(p => p.id === id);
-    
+const atualizarPaciente = async (id, novosDados) => {
+    const paciente = await Paciente.findById(id);
     if (!paciente) {
         throw new Error(`Paciente com ID ${id} não foi encontrado.`);
     }
 
     if (novosDados.nome) paciente.nome = novosDados.nome;
-    if (novosDados.dataNascimento) paciente.dataNascimento = novosDados.dataNascimento;
-
-    return paciente;
-};
-
-// 4. EXCLUSÃO: Remove um paciente do sistema pelo ID
-const excluirPaciente = (id) => {
-    const indice = pacientes.findIndex(p => p.id === id);
-
-    if (indice === -1) {
-        throw new Error(`Paciente com ID ${id} não foi encontrado.`);
+    if (novosDados.dataNascimento) {
+        const data = new Date(novosDados.dataNascimento);
+        if (isNaN(data)) {
+            throw new Error('Formato de data de nascimento inválido. Use AAAA-MM-DD.');
+        }
+        paciente.dataNascimento = data;
     }
 
-    const [pacienteRemovido] = pacientes.splice(indice, 1);
+    return paciente.save();
+};
+
+const excluirPaciente = async (id) => {
+    const pacienteRemovido = await Paciente.findByIdAndDelete(id);
+    if (!pacienteRemovido) {
+        throw new Error(`Paciente com ID ${id} não foi encontrado.`);
+    }
     return pacienteRemovido;
 };
 
-// 5. BUSCA: Busca pacientes por nome (parcial/case-insensitive)
-const buscarPacientePorNome = (nome) => {
-    return pacientes.filter(p => p.nome.toLowerCase().includes(nome.toLowerCase()));
+const buscarPacientePorNome = async (nome) => {
+    return Paciente.find({ nome: new RegExp(nome, 'i') }).lean();
 };
 
-// 5. BUSCA: Busca pacientes por data de nascimento (exata)
-const buscarPacientePorDataNascimento = (dataNascimento) => {
-    return pacientes.filter(p => p.dataNascimento === dataNascimento);
+const buscarPacientePorDataNascimento = async (dataNascimento) => {
+    const data = new Date(dataNascimento);
+    if (isNaN(data)) {
+        throw new Error('Formato de data de nascimento inválido. Use AAAA-MM-DD.');
+    }
+
+    const proximoDia = new Date(data);
+    proximoDia.setDate(proximoDia.getDate() + 1);
+
+    return Paciente.find({
+        dataNascimento: {
+            $gte: data,
+            $lt: proximoDia
+        }
+    }).lean();
 };
 
-// Exporta todas as funções do controlador
 module.exports = {
     criarPaciente,
     listarPacientes,

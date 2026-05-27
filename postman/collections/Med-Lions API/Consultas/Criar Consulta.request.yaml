@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'Criar Consulta'
+method: POST
+url: '{{baseUrl}}/consultas'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "data": "2026-07-15 10:00",
+      "idMedico": 1,
+      "idPaciente": 1,
+      "descricao": "Consulta de rotina"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 201 - Criado com sucesso", () => pm.response.to.have.status(201));
+      pm.test("Retorna a consulta criada com ID", () => {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('id');
+          pm.expect(json.idMedico).to.eql(1);
+          pm.expect(json.idPaciente).to.eql(1);
+      });
+      pm.environment.set("consultaId", pm.response.json().id);

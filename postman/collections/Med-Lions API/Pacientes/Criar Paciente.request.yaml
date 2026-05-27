@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Criar Paciente'
+method: POST
+url: '{{baseUrl}}/pacientes'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nome": "Maria Santos",
+      "dataNascimento": "1990-08-20"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 201 - Criado com sucesso", () => pm.response.to.have.status(201));
+      pm.test("Retorna o paciente criado com ID", () => {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property('id');
+          pm.expect(json.nome).to.eql('Maria Santos');
+          pm.expect(json.dataNascimento).to.eql('1990-08-20');
+      });
+      pm.environment.set("pacienteId", pm.response.json().id);

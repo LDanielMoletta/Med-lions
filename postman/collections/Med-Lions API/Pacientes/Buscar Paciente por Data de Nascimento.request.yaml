@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Buscar Paciente por Data de Nascimento'
+method: GET
+url: '{{baseUrl}}/pacientes'
+order: 3000
+queryParams:
+  - key: dataNascimento
+    value: '1985-04-12'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Retorna array", () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test("Resultados têm a data de nascimento correta", () => {
+          pm.response.json().forEach(p => {
+              pm.expect(p.dataNascimento).to.eql('1985-04-12');
+          });
+      });
