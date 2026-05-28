@@ -24,7 +24,7 @@ const buildFallbackUrl = async (srvUrl) => {
 };
 
 const conectarBanco = async () => {
-    const url = process.env.MONGODB_URI || 'mongodb+srv://LDaniel:daniel147@cluster0.dzxaibn.mongodb.net/medlions?retryWrites=true&w=majority';
+    const url = process.env.MONGODB_URI || 'mongodb+srv://login:senha@cluster0.dzxaibn.mongodb.net/medlions?retryWrites=true&w=majority';
 
     try {
         await mongoose.connect(url);
